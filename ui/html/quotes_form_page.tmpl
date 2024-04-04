@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Quotebox</title>
+    <link rel="stylesheet" href ="/static/css/styles.css">
+</head>
+<body>
+    <h2>QuoteBox</h2>
+    <hr>
+    <h3>Add a Quote</h3>
+
+    <form action="/quote-add" id="quoteform" method="post">
+        <div>
+            <label> Author</label> <br>
+            {{ with .ErrorsFromForm.author }}
+            <label class="error"> {{ . }} </label>
+            {{ end }}
+            <label type="text" name="author_name" value="{{ .FormData.Get "author"}}">
+        </div>
+        <div>
+            <input type="text" size="30" name="author_name"><br>
+            <label>Category</label><br>
+            {{with .ErrorsFromForm.category }}
+            <label class = "error" > {{ . }} </label>
+            {{ end }}<br>
+            <input type="text" size="20" name="category" value="{{ .FormData.Get "category" }} "><br><br>
+        </div>
+        <div>
+            <label>Quote</label><br>
+            {{ with .ErrorsFromForm.quote }}
+            <label class="error" > {{ . }} </label>
+            {{ end }}<br>
+            <textarea cols="50" rows="8" form="quoteform" name="quote">
+                {{ .FormData.Get "quote" }}
+            </textarea>
+        </div>
+        <br>
+        <div>
+            <input type="submit" value="Submit">
+        </div>
+    </form>
+    <hr>
+    <footer>
+        <p>
+            <a href="mailto:2020151792@ub.edu.bz"> 2020151792@ub.edu.bz</a> </a>
+        </p>
+    </footer>
+    
+</body>
+</html>

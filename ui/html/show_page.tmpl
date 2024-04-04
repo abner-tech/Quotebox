@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuoteBox</title>
+</head>
+<body>
+    <h2>QuoteBox</h2>
+    <hr>
+    <h3>Quotes</h3>
+    {{ if .Quotes }}
+    {{ range .Quotes}}
+    <ul>
+        <li>{{ .Quote }} </li>
+        <strong> -- {{.Author_name}} </strong>
+    </ul>
+    {{end}}
+    {{else}}
+    <p>Nothing to see here, Move along ...</p>
+    {{end}}
+    <footer>
+        <p>
+            <a href="mailto:2020151792@ub.edu.bz"> 2020151792@ub.edu.bz</a> </a>
+        </p>
+    </footer>
+</body>
+</html>
