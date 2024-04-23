@@ -1,0 +1,35 @@
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Signup</title>
+    <link rel="stylesheet" href="/static/css/styles.css"/>
+</head>
+<body>  
+    <header>
+        <h1><a href="/">QuoteBox</a></h1>
+    </header>
+    <nav>
+        <div>
+            <a href="/">Home</a>
+            <a href="/quote/create">Create quote</a>
+
+        </div>
+
+    </nav>
+
+    
+    <div>
+    {{ with .Quote }}
+    <ul>
+        <li>{{ .Quote}}</li>
+        <strong>--{{.Author_name}}</strong>
+    </ul>
+    {{ end }}
+    </div>
+    <footer>
+         <p>
+             <a href="mailto:2020151792@ub.edu.bz">2020151792@ub.edu.bz</a>
+        </p>
+    </footer>
+</body>
+</html>

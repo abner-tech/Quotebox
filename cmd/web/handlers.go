@@ -1,13 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"amencia.net/quotebox/pkg/models"
 )
 
 // A struct to hold a quote
@@ -20,33 +24,47 @@ type Quotation struct {
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Welcome to quotebox."))
+	q, err := app.quotes.Read()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := &templateData{
+		Quotes: q,
+	}
+
+	//Display Quotes using a tmpl
+	ts, err := template.ParseFiles("./ui/html/show_page.tmpl")
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	err = ts.Execute(w, data)
+
+	if err != nil {
+		app.serverError(w, err)
+		log.Print(q[0])
+		return
+	}
 }
 
 func (app *application) createQuoteForm(w http.ResponseWriter, r *http.Request) {
 	ts, err := template.ParseFiles("./ui/html/quotes_form_page.tmpl")
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, err)
 		return
 	}
 	err = ts.Execute(w, nil)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, err)
 	}
 }
 
 func (app *application) createQuote(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/quote", http.StatusSeeOther)
-		return
-	}
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w,
-			http.StatusText(http.StatusBadRequest),
-			http.StatusBadRequest)
+		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 	author := r.PostForm.Get("author_name")
@@ -77,9 +95,7 @@ func (app *application) createQuote(w http.ResponseWriter, r *http.Request) {
 		ts, err := template.ParseFiles("./ui/html/quotes_form_page.tmpl")
 		if err != nil {
 			log.Println(err.Error())
-			http.Error(w,
-				http.StatusText(http.StatusBadRequest),
-				http.StatusBadRequest)
+			app.clientError(w, http.StatusBadRequest)
 			return
 		}
 		err = ts.Execute(w, &templateData{
@@ -87,10 +103,7 @@ func (app *application) createQuote(w http.ResponseWriter, r *http.Request) {
 			FormData:       r.PostForm,
 		})
 		if err != nil {
-			log.Println(err.Error())
-			http.Error(w,
-				http.StatusText(http.StatusBadRequest),
-				http.StatusBadRequest)
+			app.serverError(w, err)
 			return
 		}
 		return
@@ -99,46 +112,44 @@ func (app *application) createQuote(w http.ResponseWriter, r *http.Request) {
 	//Insert a Quote
 	id, err := app.quotes.Insert(author, category, quote)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w,
-			http.StatusText(http.StatusBadRequest),
-			http.StatusBadRequest)
+		app.serverError(w, err)
+		return
 	}
-	fmt.Print(w, "row with id: %d has been inserted.", id)
-
+	http.Redirect(w, r, fmt.Sprintf("/quote/%d", id), http.StatusSeeOther)
 }
 
-func (app *application) displayQuotation(w http.ResponseWriter, r *http.Request) {
-	q, err := app.quotes.Read()
+func (app *application) showQuote(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+	if err != nil || id < 1 {
+		app.notFound(w)
+		return
+	}
+	q, err := app.quotes.Getid(id)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w,
-			http.StatusText(http.StatusInternalServerError),
-			http.StatusInternalServerError)
+		if errors.Is(err, models.ErrRecordNotFound) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
 		return
 	}
 
+	//an instance of templeData
 	data := &templateData{
-		Quotes: q,
+		Quote: q,
 	}
-
-	//Display Quotes using a tmpl
-	ts, err := template.ParseFiles("./ui/html/show_page.tmpl")
+	// Display the quote using a template
+	ts, err := template.ParseFiles("./ui/html/quote_page.tmpl")
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w,
-			http.StatusText(http.StatusInternalServerError),
-			http.StatusInternalServerError)
+		app.serverError(w, err)
 		return
 	}
+
 	err = ts.Execute(w, data)
 
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w,
-			http.StatusText(http.StatusInternalServerError),
-			http.StatusInternalServerError)
-		log.Print(q[0])
+		app.serverError(w, err)
 		return
 	}
+
 }

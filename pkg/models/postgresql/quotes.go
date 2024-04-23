@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"database/sql"
+	"errors"
 
 	models "amencia.net/quotebox/pkg/models"
 )
@@ -52,5 +53,23 @@ func (m *QuoteModel) Read() ([]*models.Quote, error) {
 		return nil, err
 	}
 	return quotes, nil
+}
+
+func (m *QuoteModel) Getid(id int) (*models.Quote, error) {
+	s := `
+	SELECT author_name, category, quote
+	FROM quotations
+	WHERE quotations_id = $1
+	`
+	q := &models.Quote{}
+	err := m.DB.QueryRow(s, id).Scan(&q.Author_name, &q.Category, &q.Quote)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrRecordNotFound
+		} else {
+			return nil, err
+		}
+	}
+	return q, err
 
 }

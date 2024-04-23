@@ -1,8 +1,11 @@
 package models
 
 import (
+	"errors"
 	"time"
 )
+
+var ErrRecordNotFound = errors.New("models: no matching record found")
 
 // A struct to hold a quote
 type Quote struct {

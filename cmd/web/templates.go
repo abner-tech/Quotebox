@@ -10,4 +10,5 @@ type templateData struct {
 	Quotes         []*models.Quote
 	ErrorsFromForm map[string]string
 	FormData       url.Values
+	Quote          *models.Quote
 }

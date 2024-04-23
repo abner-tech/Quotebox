@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"amencia.net/quotebox/pkg/postgresql"
+	"amencia.net/quotebox/pkg/models/postgresql"
 	_ "github.com/lib/pq" // third party package
 )
 
@@ -29,7 +29,9 @@ func setUpDB(dsn string) (*sql.DB, error) {
 
 // dependecies (things/variables)
 type application struct {
-	quotes *postgresql.QuoteModel
+	quotes   *postgresql.QuoteModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
 }
 
 // dsn : data source name
@@ -40,23 +42,29 @@ func main() {
 		os.Getenv("QUOTEBOX_DB_DSN"),
 		"PosrgreSQL DSN (Data Source Name)")
 	flag.Parse()
+	//create a logger
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	var db, err = setUpDB(*dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close() // Always do this before exiting
 	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
 		quotes: &postgresql.QuoteModel{
 			DB: db,
 		},
 	}
 
 	srv := &http.Server{
-		Addr:    *addr,
-		Handler: app.routes(),
+		Addr:     *addr,
+		Handler:  app.routes(),
+		ErrorLog: errorLog,
 	}
 
-	log.Printf("Starting server on port %s", *addr)
+	infoLog.Printf("Starting server on port %s", *addr)
 	err = srv.ListenAndServe()
-	log.Fatal(err)
+	errorLog.Fatal(err)
 }
